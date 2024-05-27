@@ -35,6 +35,9 @@ class ChartStyle {
   /// The color to use when the `close` price is lower than `open` price.
   final Color priceLossColor;
 
+  final Color buySignalColor;
+  final Color sellSignalColor;
+
   /// The color of the `volume` bars.
   final Color volumeColor;
 
@@ -77,5 +80,7 @@ class ChartStyle {
     this.priceGridLineColor = Colors.grey,
     this.selectionHighlightColor = const Color(0x33757575),
     this.overlayBackgroundColor = const Color(0xEE757575),
+    this.buySignalColor = Colors.green,
+    this.sellSignalColor = Colors.red,
   });
 }

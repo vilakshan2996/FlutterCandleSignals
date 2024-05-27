@@ -151,7 +151,7 @@ class ChartPainter extends CustomPainter {
       for(int i = 0; i < candle.trades!.length; i++){
         final trade = candle.trades!.elementAt(i);
         final tradePaint = Paint()
-          ..color = trade.isBuyer ? Colors.green : Colors.red
+          ..color = trade.isBuyer ?   params.style.buySignalColor : params.style.sellSignalColor
           ..style = PaintingStyle.fill;
         final y = params.fitPrice(trade.price);
         
