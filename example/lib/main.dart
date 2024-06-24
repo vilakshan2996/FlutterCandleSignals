@@ -3,27 +3,29 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:interactive_chart/interactive_chart.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:intl/intl.dart';
 
 Future main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   Get.put(ChartController()); // Initialize controller
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return GetMaterialApp(
+  runApp(GetMaterialApp(
       // Changed to GetMaterialApp
       debugShowCheckedModeBanner: false,
       home: HomeScreen(),
-    );
-  }
+      themeMode: (Get.find<ChartController>().isDarkModeOn.value)
+          ? ThemeMode.dark
+          : ThemeMode.light,
+        theme: ThemeData(
+        brightness: (Get.find<ChartController>().isDarkModeOn.value) ? Brightness.dark : Brightness.light,
+      ),
+      
+  ));
 }
+
 
 class HomeScreen extends StatelessWidget {
   final controller = Get.find<ChartController>(); // Find controller
+  String lastProcessedDate = "";
 
   @override
   Widget build(BuildContext context) {
@@ -32,10 +34,10 @@ class HomeScreen extends StatelessWidget {
         title: const Text("Interactive Chart Demo"),
         actions: [
           IconButton(
-            icon: Obx(() => Icon(controller.darkMode.value
+            icon: Obx(() => Icon(controller.isDarkModeOn.value
                 ? Icons.dark_mode
                 : Icons.light_mode)),
-            onPressed: controller.toggleDarkMode,
+            onPressed: controller.toggleTheme
           ),
           IconButton(
             icon: Obx(() => Icon(
@@ -51,51 +53,71 @@ class HomeScreen extends StatelessWidget {
         minimum: const EdgeInsets.all(24.0),
         child: Obx(() => (controller.candles.isEmpty)
             ? const Center(child: CircularProgressIndicator())
-            : InteractiveChart(
-              style: ChartStyle(
-                priceGainColor: Colors.green,
-                priceLossColor: Colors.red,
+            : Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 2),
+                borderRadius: BorderRadius.circular(10),
               ),
-                candles: controller.candles.toList(),
-                timeLabel: (timestamp, visibleDataCount) {
-                  final date = DateTime.fromMillisecondsSinceEpoch(timestamp)
-                      .toIso8601String()
-                      .split("T")
-                      .first
-                      .split("-");
-
-                  // Otherwise, we should show month and date.
-                  return "${date[1]}-${date[2]}"; // mm-dd
-                },
-                overlayInfo: (candle) {
-                  final date = intl.DateFormat('EEE, MMM d, H:mm').format(
-                    DateTime.fromMillisecondsSinceEpoch(candle.timestamp));
-                  var info = {
-                    "Date": date,
-                    "Open": candle.open?.toStringAsFixed(2) ?? "-",
-                    "High": candle.high?.toStringAsFixed(2) ?? "-",
-                    "Low": candle.low?.toStringAsFixed(2) ?? "-",
-                    "Close": candle.close?.toStringAsFixed(2) ?? "-"
-                  };
-
-                  int buyCount = 1;
-                  int sellCount = 1;
-
-                  for (var trade in candle.trades!) {
-                    if (trade.isBuyer) {
-                      info["buy$buyCount"] =
-                          "(Price: ${trade.price}, Quantity: ${trade.quantity})";
-                      buyCount++;
+              child: InteractiveChart(
+                style: ChartStyle(
+                  priceGainColor: Colors.green,
+                  priceLossColor: Colors.red,
+                ),
+                  candles: controller.candles.toList(),
+                  timeLabel: (timestamp, visibleDataCount) {
+                    final dateTime =
+                        DateTime.fromMillisecondsSinceEpoch(timestamp);
+                    final dateFormat = DateFormat('MM-dd'); // Format for month and date
+                    final monthAndDate = dateFormat.format(dateTime); // 'MM-dd'
+                    final time = dateTime
+                        .toIso8601String()
+                        .split("T")[1]
+                        .substring(0, 5); // hh:mm
+              
+                    String label;
+              
+                    // Check if the current date is the same as the last processed date.
+                    if (monthAndDate == lastProcessedDate) {
+                      // If it is, we only show the hour and minute.
+                      label = "$time\n"; // hh:mm
                     } else {
-                      info["sell$sellCount"] =
-                          "(Price: ${trade.price}, Quantity: ${trade.quantity})";
-                      sellCount++;
+                      // If it's a new date, we update the lastProcessedDate and show date, hour, and minute.
+                      lastProcessedDate = monthAndDate;
+                      label = "$monthAndDate\n$time\n"; // yyyy-mm-dd hh:mm
                     }
-                  }
-
-                  return info;
-                },
-              )),
+              
+                    return label;
+                  },
+                  overlayInfo: (candle) {
+                    final date = intl.DateFormat('EEE, MMM d, H:mm').format(
+                      DateTime.fromMillisecondsSinceEpoch(candle.timestamp));
+                    var info = {
+                      "Date": date,
+                      "Open": candle.open?.toStringAsFixed(2) ?? "-",
+                      "High": candle.high?.toStringAsFixed(2) ?? "-",
+                      "Low": candle.low?.toStringAsFixed(2) ?? "-",
+                      "Close": candle.close?.toStringAsFixed(2) ?? "-"
+                    };
+              
+                    int buyCount = 1;
+                    int sellCount = 1;
+              
+                    for (var trade in candle.trades!) {
+                      if (trade.isBuyer) {
+                        info["buy$buyCount"] =
+                            "(Price: ${trade.price}, Quantity: ${trade.quantity})";
+                        buyCount++;
+                      } else {
+                        info["sell$sellCount"] =
+                            "(Price: ${trade.price}, Quantity: ${trade.quantity})";
+                        sellCount++;
+                      }
+                    }
+              
+                    return info;
+                  },
+                ),
+            )),
       ),
     );
   }

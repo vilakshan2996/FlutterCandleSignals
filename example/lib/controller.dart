@@ -1,13 +1,12 @@
 import 'package:example/BinanceAPI.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:interactive_chart/interactive_chart.dart';
 
-
 class ChartController extends GetxController {
   RxList<ExtendedCandleData> candles = <ExtendedCandleData>[].obs;
-  final RxBool darkMode = true.obs;
+  final RxBool isDarkModeOn = true.obs;
   final RxBool showAverage = false.obs;
-
 
   @override
   void onInit() async {
@@ -15,15 +14,18 @@ class ChartController extends GetxController {
     super.onInit();
   }
 
+  Future<void> fetchPastTrades() async {
+    candles.value = await BinanceAPI.fetchPastTradesOfFutureBot('BNBUSDT');
+  }
 
-Future<void> fetchPastTrades() async {
-    List<ExtendedCandleData> response = await BinanceAPI.fetchPastTrades();
-    print("response length: ${response.length}");
-    candles.assignAll(response);
+  
+  //toggle dark, light mode
+  void toggleTheme() {
+    isDarkModeOn.value = !isDarkModeOn.value;
+    Get.changeTheme(isDarkModeOn.value ? ThemeData.dark() : ThemeData.light());
   }
-  void toggleDarkMode() {
-    darkMode.toggle();
-  }
+
+  
 
   void toggleShowAverage() {
     showAverage.toggle();
